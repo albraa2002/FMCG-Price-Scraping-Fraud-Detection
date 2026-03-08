@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FMCG Fraud Detection Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #0f172a;
+    --card:        #1e293b;
+    --card-border: #334155;
+    --red:         #ef4444;
+    --green:       #10b981;
+    --blue:        #38bdf8;
+    --text:        #e2e8f0;
+    --muted:       #94a3b8;
+    --font-mono:   'IBM Plex Mono', monospace;
+    --font-sans:   'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    padding: 0 0 48px;
+  }
+
+  /* ── Header ─────────────────────────────────────── */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    border-bottom: 1px solid var(--card-border);
+    padding: 28px 48px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 80px,
+      rgba(56,189,248,.03) 80px,
+      rgba(56,189,248,.03) 81px
+    );
+  }
+  .header-icon {
+    font-size: 2.4rem;
+    filter: drop-shadow(0 0 12px rgba(239,68,68,.6));
+  }
+  .header-text h1 {
+    font-family: var(--font-mono);
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: -0.5px;
+  }
+  .header-text p {
+    font-size: .82rem;
+    color: var(--muted);
+    margin-top: 3px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .badge {
+    margin-left: auto;
+    background: rgba(239,68,68,.15);
+    border: 1px solid rgba(239,68,68,.4);
+    color: var(--red);
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    padding: 5px 12px;
+    border-radius: 4px;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+  }
+
+  /* ── Main layout ─────────────────────────────────── */
+  .main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 36px 32px 0;
+    display: grid;
+    gap: 24px;
+  }
+
+  /* ── KPI row ─────────────────────────────────────── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 22px 26px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
+  }
+  .kpi-card.blue::after  { background: var(--blue); }
+  .kpi-card.green::after { background: var(--green); }
+  .kpi-card.red::after   { background: var(--red); }
+
+  .kpi-label {
+    font-family: var(--font-mono);
+    font-size: .70rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .kpi-value {
+    font-family: var(--font-mono);
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .kpi-card.blue  .kpi-value { color: var(--blue); }
+  .kpi-card.green .kpi-value { color: var(--green); }
+  .kpi-card.red   .kpi-value { color: var(--red); }
+  .kpi-sub {
+    font-size: .76rem;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* ── Chart cards ─────────────────────────────────── */
+  .chart-row {
+    display: grid;
+    gap: 20px;
+  }
+  .chart-row.two-col { grid-template-columns: 1fr 1fr; }
+  .chart-row.one-col { grid-template-columns: 1fr; }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    overflow: hidden;
+  }
+  .chart-card .plotly-graph-div {
+    width: 100% !important;
+  }
+
+  /* ── Footer ──────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    color: var(--muted);
+    margin-top: 40px;
+    letter-spacing: .5px;
+  }
+
+  /* ── Responsive ──────────────────────────────────── */
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: 1fr; }
+    .chart-row.two-col { grid-template-columns: 1fr; }
+    .header { padding: 20px 24px; }
+    .main   { padding: 24px 16px 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────── -->
+<div class="header">
+  <div class="header-icon">🛡️</div>
+  <div class="header-text">
+    <h1>FMCG MARKET TRACKER — FRAUD DETECTION</h1>
+    <p>Price Scraping Intelligence &amp; Discount Authenticity Analysis</p>
+  </div>
+  <div class="badge">⚠ Live Audit</div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────── -->
+<div class="main">
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card blue">
+      <div class="kpi-label">📦 Total Items Scraped</div>
+      <div class="kpi-value">120</div>
+      <div class="kpi-sub">Across 7 product categories</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">📈 Avg Market Inflation</div>
+      <div class="kpi-value">+63.1%</div>
+      <div class="kpi-sub">Old prices vs category baseline median</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">🔴 Fake Discounts Detected</div>
+      <div class="kpi-value">63</div>
+      <div class="kpi-sub">52.5% of catalogue flagged as fraudulent</div>
+    </div>
+  </div>
+
+  <!-- Middle row: Donut + Bar -->
+  <div class="chart-row two-col">
+    <div class="chart-card"><div>                            <div id="923a7afd-a10b-4afd-a835-7f63bccca52e" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("923a7afd-a10b-4afd-a835-7f63bccca52e")) {                    Plotly.newPlot(                        "923a7afd-a10b-4afd-a835-7f63bccca52e",                        [{"hole":0.6,"hovertemplate":"\u003cb\u003e%{label}\u003c\u002fb\u003e\u003cbr\u003eCount: %{value}\u003cbr\u003eShare: %{percent}\u003cextra\u003e\u003c\u002fextra\u003e","labels":["Fake Discount 🔴","Legit Discount ✅"],"marker":{"colors":["#ef4444","#10b981"],"line":{"color":"#0f172a","width":3}},"textfont":{"color":"#e2e8f0","size":13},"textinfo":"label+percent","values":[63,57],"type":"pie"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"IBM Plex Mono, monospace","color":"#e2e8f0","size":12},"margin":{"l":40,"r":40,"t":60,"b":40},"legend":{"font":{"size":11},"bgcolor":"rgba(0,0,0,0)"},"title":{"font":{"size":15,"color":"#38bdf8"},"text":"Fake vs Legit Discount Distribution","x":0.5},"paper_bgcolor":"#0f172a","plot_bgcolor":"#1e293b","annotations":[{"showarrow":false,"text":"\u003cb\u003e120\u003c\u002fb\u003e\u003cbr\u003eProducts","x":0.5,"y":0.5,"font":{"size":16,"color":"#e2e8f0"}}]},                        {"responsive": true}                    )                };                            </script>        </div></div>
+    <div class="chart-card"><div>                            <div id="0260f81e-2a11-4051-a194-090e0d585ac1" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("0260f81e-2a11-4051-a194-090e0d585ac1")) {                    Plotly.newPlot(                        "0260f81e-2a11-4051-a194-090e0d585ac1",                        [{"hovertemplate":"\u003cb\u003e%{y}\u003c\u002fb\u003e\u003cbr\u003eAvg Discount: %{x:.1f}%\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":["#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444"],"line":{"color":"#0f172a","width":1}},"orientation":"h","text":["20.1%  (10 fake)","21.1%  (10 fake)","26.2%  (7 fake)","26.2%  (11 fake)","26.5%  (8 fake)","29.2%  (7 fake)","33.0%  (10 fake)"],"textfont":{"color":"#e2e8f0","size":11},"textposition":"outside","x":[20.09039206105447,21.08888373808434,26.15653442613964,26.24432381351547,26.47539681305239,29.240808048483192,33.0048965928088],"y":["Beverages","Pantry","Dairy","Household","Personal Care","Oils & Fats","Snacks"],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"IBM Plex Mono, monospace","color":"#e2e8f0","size":12},"margin":{"l":40,"r":40,"t":60,"b":40},"legend":{"font":{"size":11},"bgcolor":"rgba(0,0,0,0)"},"title":{"font":{"size":15,"color":"#38bdf8"},"text":"Avg Discount % by Category  (red = \u003e3 fake items)","x":0.5},"xaxis":{"title":{"text":"Avg Discount (%)"},"gridcolor":"#334155","zerolinecolor":"#334155"},"yaxis":{"gridcolor":"#334155"},"paper_bgcolor":"#0f172a","plot_bgcolor":"#1e293b","bargap":0.3},                        {"responsive": true}                    )                };                            </script>        </div></div>
+  </div>
+
+  <!-- Bottom row: Scatter full-width -->
+  <div class="chart-row one-col">
+    <div class="chart-card"><div>                            <div id="ce2a4035-53df-4748-8635-d7f23c4b22c4" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script type="text/javascript">                                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("ce2a4035-53df-4748-8635-d7f23c4b22c4")) {                    Plotly.newPlot(                        "ce2a4035-53df-4748-8635-d7f23c4b22c4",                        [{"customdata":[["Potato Chips 150g","Snacks",4.471858134155731],["All-Purpose Cleaner","Household",31.091058244462676],["Coconut Oil 300ml","Oils & Fats",24.03979146717736],["Herbal Tea Mix","Beverages",4.50969373419501],["Butter 200g","Dairy",37.809639203015614],["Orange Juice 1L","Beverages",31.00029163021289],["Canola Oil 1.5L","Oils & Fats",48.907500116970006],["Extra Virgin Olive 750ml","Oils & Fats",37.79229815167741],["Shampoo 400ml","Personal Care",32.060374613566104],["Basmati Rice 5kg","Pantry",3.2964707127361335],["Kitchen Towels 4-Roll","Household",29.114142635123468],["Turkish Coffee 250g","Beverages",22.570425550132715],["Quinoa 500g","Pantry",4.297795646748917],["Honey 500g","Snacks",21.035618078419642],["Moisturizer 200ml","Personal Care",20.652380049307784],["Fabric Softener 1L","Household",24.97403346797461],["Sunscreen SPF50","Personal Care",27.725359268398897],["Conditioner 400ml","Personal Care",4.21551509104516],["Wheat Flour 2kg","Pantry",30.689035350509286],["White Sugar 1kg","Pantry",1.5062367615909638],["Mixed Nuts 250g","Snacks",31.499339498018504],["Sports Drink 500ml","Beverages",2.9327796522190566],["White Cheese 500g","Dairy",30.22279348757497],["Sponges 6-Pack","Household",4.336399474375815],["UHT Milk 6-Pack","Dairy",27.360137438000503],["Green Tea 25-Bag","Beverages",42.63204835992468],["Oats 1kg","Pantry",22.959590210586214],["Couscous 500g","Pantry",34.83894853757867],["Cheddar Cheese 400g","Dairy",36.51125150107033],["Laundry Powder 3kg","Household",29.981453575982375],["Aluminum Foil 30m","Household",41.62570435199616],["Ghee 500g","Dairy",20.805577072037178],["Jam 450g","Snacks",51.923717521652236],["Peanut Butter 400g","Snacks",35.222522744037384],["Lipton Tea 100-Bag","Beverages",3.9741847826086856],["Cashews 200g","Snacks",53.05509828604629],["Toilet Cleaner 500ml","Household",38.9541255675591],["Olive Oil 500ml","Oils & Fats",33.436197499198464],["Body Wash 500ml","Personal Care",41.57976845389605],["Almonds 200g","Snacks",41.42394822006473],["Vegetable Oil 3L","Oils & Fats",3.4302908726178556],["Nescafé Classic 200g","Beverages",22.13813745976167],["Pasta 500g","Pantry",4.3157894736842115],["All-Purpose Cleaner","Household",2.3264073876753724],["Coconut Oil 300ml","Oils & Fats",38.453589720549914],["Herbal Tea Mix","Beverages",24.651513248775583],["Tahini 400g","Snacks",48.03036251799502],["Butter 200g","Dairy",29.621245102307352],["Orange Juice 1L","Beverages",4.200896191187454],["Dish Soap 750ml","Household",37.33237976041481],["Extra Virgin Olive 750ml","Oils & Fats",26.521677729134304],["Shampoo 400ml","Personal Care",37.588778409090914],["Basmati Rice 5kg","Pantry",25.185761188871602],["Kitchen Towels 4-Roll","Household",1.6910703237780993],["Turkish Coffee 250g","Beverages",31.578947368421055],["Quinoa 500g","Pantry",29.912956143287577],["Honey 500g","Snacks",47.9972624450688],["Moisturizer 200ml","Personal Care",31.338694418164614],["Fabric Softener 1L","Household",48.11284788410218],["Conditioner 400ml","Personal Care",26.879904638919243],["Wheat Flour 2kg","Pantry",35.85981081736599],["Mixed Nuts 250g","Snacks",32.24696609533343],["White Cheese 500g","Dairy",2.398924619997925]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eCategory: %{customdata[1]}\u003cbr\u003eOld: EGP %{x:.2f}\u003cbr\u003eNew: EGP %{y:.2f}\u003cbr\u003eDiscount: %{customdata[2]:.1f}%\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#ef4444","line":{"color":"#0f172a","width":0.5},"opacity":0.8,"size":8},"mode":"markers","name":"Fake Discount 🔴","x":[38.91,73.14,187.98,71.18,148.56,68.58,213.73,330.57,109.98,188.99,57.91,116.79,144.26,167.05,105.46,86.65,137.78,80.18,83.45,42.49,151.4,38.53,116.7,22.83,360.89,100.91,87.85,108.04,191.53,172.54,83.41,193.65,120.08,162.68,88.32,309.81,63.87,249.52,121.79,253.38,199.4,177.07,28.5,56.31,222.58,79.63,152.82,114.85,53.56,55.93,283.24,112.64,231.48,48.49,118.94,179.22,277.62,126.84,131.15,100.67,82.46,159.86,96.71],"y":[37.17,50.4,142.79,67.97,92.39,47.32,109.2,205.64,74.72,182.76,41.05,90.43,138.06,131.91,83.68,65.01,99.58,76.8,57.84,41.85,103.71,37.4,81.43,21.84,262.15,57.89,67.68,70.4,121.6,120.81,48.69,153.36,57.73,105.38,84.81,145.44,38.99,166.09,71.15,148.42,192.56,137.87,27.27,55.0,136.99,60.0,79.42,80.83,51.31,35.05,208.12,70.3,173.18,47.67,81.38,125.61,144.37,87.09,68.05,73.61,52.89,108.31,94.39],"type":"scatter"},{"customdata":[["Tahini 400g","Snacks",26.40362379306234],["Spaghetti 500g","Pantry",16.272677295217157],["Dish Soap 750ml","Household",24.946785866326096],["Trash Bags 30-Pack","Household",29.640654901126933],["Bleach 1L","Household",38.69034406215316],["Rice Cakes 100g","Snacks",18.184744126166716],["Skimmed Milk 1L","Dairy",30.348993288590602],["Mango Juice 1L","Beverages",30.70317563188593],["Tomato Juice 1L","Beverages",5.501930501930505],["Hand Soap 250ml","Personal Care",17.335562987736903],["Corn Flour 1kg","Pantry",21.585109576703694],["Fava Beans 800g","Pantry",37.70685579196217],["Sesame Oil 250ml","Oils & Fats",33.16921482249286],["Lentils 1kg","Pantry",23.052196540639823],["Guava Nectar 1L","Beverages",23.46714599560615],["Sparkling Water 1L","Beverages",5.566368236667963],["Labneh 500g","Dairy",24.92935635792779],["Dark Chocolate 100g","Snacks",32.56887350353382],["Toothpaste 120ml","Personal Care",14.764150943396222],["Cream 200ml","Dairy",38.74813710879285],["Bread Crumbs 500g","Pantry",30.865319100613213],["Mineral Water 1.5L","Beverages",24.108322324966977],["Corn Chips 120g","Snacks",20.92766427388183],["Full-Fat Milk 1L","Dairy",24.35140454464126],["Milk Chocolate 100g","Snacks",21.587356721083708],["Mouthwash 500ml","Personal Care",32.67690691873441],["Deodorant 150ml","Personal Care",35.58243157224698],["Wet Wipes 80-Pack","Personal Care",29.821112640062896],["Bulgur 1kg","Pantry",19.06348325004628],["Baking Soda 500g","Household",30.075187969924823],["Sunflower Oil 1.5L","Oils & Fats",33.93749108034822],["Lip Balm","Personal Care",35.195530726256976],["Greek Yogurt 400g","Dairy",28.98282694848085],["Feta Cheese 250g","Dairy",14.965986394557826],["Cling Wrap 30m","Household",23.196368848542765],["Egyptian Rice 5kg","Pantry",5.167681906419438],["Chickpeas 1kg","Pantry",15.073419238837275],["Corn Oil 1.5L","Oils & Fats",21.21510922330097],["Fresh Yogurt 500g","Dairy",18.938758389261746],["Cotton Pads 100-Pack","Personal Care",29.52164009111617],["Potato Chips 150g","Snacks",28.53470437017995],["Spaghetti 500g","Pantry",28.60927152317881],["Canola Oil 1.5L","Oils & Fats",34.92660351435389],["Trash Bags 30-Pack","Household",5.582462401223548],["Bleach 1L","Household",21.87024063356686],["Rice Cakes 100g","Snacks",45.969581749049425],["Skimmed Milk 1L","Dairy",26.35298493583783],["Mango Juice 1L","Beverages",22.546270330902978],["Tomato Juice 1L","Beverages",29.578529578529576],["Sunscreen SPF50","Personal Care",5.856053300604885],["Hand Soap 250ml","Personal Care",27.287581699346404],["Corn Flour 1kg","Pantry",50.297755382501144],["White Sugar 1kg","Pantry",17.07627118644068],["Fava Beans 800g","Pantry",6.323006602336216],["Sports Drink 500ml","Beverages",29.966396521051596],["Sesame Oil 250ml","Oils & Fats",15.059932383977054],["Sponges 6-Pack","Household",35.100485100485095]],"hovertemplate":"\u003cb\u003e%{customdata[0]}\u003c\u002fb\u003e\u003cbr\u003eCategory: %{customdata[1]}\u003cbr\u003eOld: EGP %{x:.2f}\u003cbr\u003eNew: EGP %{y:.2f}\u003cbr\u003eDiscount: %{customdata[2]:.1f}%\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#10b981","line":{"color":"#0f172a","width":0.5},"opacity":0.8,"size":8},"mode":"markers","name":"Legit Discount ✅","x":[83.89,36.38,46.98,47.03,45.05,31.07,74.5,61.72,41.44,35.88,33.31,50.76,115.77,65.33,50.07,25.69,63.7,69.33,42.4,93.94,44.03,15.14,36.22,55.89,57.58,76.17,94.26,50.87,54.03,23.94,140.14,35.8,75.7,123.48,41.86,149.39,66.74,131.84,47.68,43.9,50.57,37.75,138.29,39.23,32.83,52.6,53.77,53.49,52.91,114.07,36.72,65.49,47.2,39.38,50.59,97.61,28.86],"y":[61.74,30.46,35.26,33.09,27.62,25.42,51.89,42.77,39.16,29.66,26.12,31.62,77.37,50.27,38.32,24.26,47.82,46.75,36.14,57.54,30.44,11.49,28.64,42.28,45.15,51.28,60.72,35.7,43.73,16.74,92.58,23.2,53.76,105.0,32.15,141.67,56.68,103.87,38.65,30.94,36.14,26.95,89.99,37.04,25.65,28.42,39.6,41.43,37.26,107.39,26.7,32.55,39.14,36.89,35.43,82.91,18.73],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#38bdf8","dash":"dash","width":1.5},"mode":"lines","name":"y = x  (zero discount)","x":[0,378.9345],"y":[0,378.9345],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"IBM Plex Mono, monospace","color":"#e2e8f0","size":12},"margin":{"l":40,"r":40,"t":60,"b":40},"legend":{"font":{"size":11},"bgcolor":"rgba(0,0,0,0)"},"title":{"font":{"size":15,"color":"#38bdf8"},"text":"Old Price vs New Price  — dots near dashed line = fake discounts","x":0.5},"xaxis":{"title":{"text":"Old Price (EGP)"},"gridcolor":"#334155","zerolinecolor":"#334155","range":[0,378.9345]},"yaxis":{"title":{"text":"New Price (EGP)"},"gridcolor":"#334155","zerolinecolor":"#334155","range":[0,378.9345]},"paper_bgcolor":"#0f172a","plot_bgcolor":"#1e293b"},                        {"responsive": true}                    )                };                            </script>        </div></div>
+  </div>
+
+  <div class="footer">
+    Generated by FMCG Fraud Detection Engine &nbsp;|&nbsp;
+    BeautifulSoup + Plotly + Python &nbsp;|&nbsp;
+    Methodology: Tiny-Discount &lt;5% &amp; Inflated-Old-Price &gt;40% above baseline
+  </div>
+
+</div>
+</body>
+</html>
